@@ -1,0 +1,64 @@
+<basic.py>
+
+(68) class QNetwork(nn.Module): 
+PyTorch의 신경망 기본 클래스를 상속받음
+
+(71) self.fc1 = nn.Linear(input_dim, 100)
+입력층으로, 데이터의 피처 수만큼 입력을 받아 100개의 노드로 전달함
+
+(72) self.fc2 = nn.Linear(100, 100)
+은닉층으로, 100개 노드에서 다시 100개 노드로 전달함
+
+(73) self.fc3 = nn.Linear(100, output_dim)
+출력층으로, 5개 클래스(액션) 각각에 대한 Q-value(보상 예측치)를 출력함
+
+(74) self.relu = nn.ReLU()
+활성화 함수로, 음수 값을 0으로 처리하여 비선형성을 부여함
+
+(76) def forward(self, x):
+데이터가 신경망을 통과하는 순서를 정의함 (fc1 → ReLU → fc2 → ReLU → fc3)
+
+(97) def update_target_model(self):
+model의 가중치를 target_model로 복사함
+
+(100) def get_actions(self, states, eval_mode=False):
+입실론-그리디 정책에 따라 무작위 행동을 할지, 모델이 예측한 최적의 행동을 할지 결정함
+
+(108) def train_on_batch(self, states, actions, rewards, next_states):
+실제 값과 예측값 사이의 오차(MSELoss)를 계산하고 역전파(Backpropagation)를 통해 가중치를 업데이트함
+
+(127) perm = np.random.permutation(len(X_train_np))
+매 에피소드마다 데이터 순서를 섞어 과적합을 방지함
+
+(136) rewards = np.where(actions == labels, 1.0, -1.0)
+에이전트의 분류가 정답이면 +1점, 틀리면 -1점의 보상을 부여함
+
+
+<0401_1.py>
+(79) return self.relu(self.fc3(x))
+출력층 활성화 추가: 마지막 출력에도 ReLU 적용
+이로 인해 모든 Q-value는 0 이상의 양수로 제한됩니다. 이는 뒤에서 설명할 확률 변환(Softmax) 시 값의 범위를 제어하려는 의도로 보입니다.
+
+(99) def get_actions_with_prob(self, states, eval_mode=False):
+확신도(Confidence) 계산 로직 추가: 단순히 행동만 선택하던 방식에서 "자신의 선택을 얼마나 확신하는가"를 계산
+basic.py는 신경망이 출력한 값(Q-value) 중에서 가장 큰 값을 가진 인덱스를 그냥 선택. 예를 들어 [10, 2, 1, 0, -5]라는 결과가 나오면 0번 클래스 선택
+0401_1.py는 신경망 출력값에 Softmax 함수를 씌워 전체 합이 1(100%)이 되는 확률로 변환함
+[0.9, 0.05, 0.02, 0.02, 0.01] : 0번 클래스일 확률이 90% -> 확신도가 0.9
+
+(155) rewards = np.where(actions == labels, 1.0 * confidence, -1.0 * (1 - confidence))
+확률 기반 보상 시스템
+정답일 때: 1.0 * confidence
+오답일 때: -1.0 * (1-confidence)
+* 이 개념은 확신도가 낮을 경우 (예: 0.1) 정답을 맞혔을 때 낮은 보상을 부여하는 것에 있음. 확신도가 낮은데 높은 보상을 부여하지 않기 위해 오답일 때는 (1-confidence)를 곱함으로써 확신도 자체를 높이는 방향으로 학습
+
+
+<0401_2.py>
+(79) return self.relu(self.fc3(x))
+마지막 출력에도 ReLU를 걸어 Q값이 음수가 나오지 않도록 강제하여 커스텀 손실 함수 계산 시 d_pred로 나누는 과정에서 부호가 꼬이는 것을 방지함
+
+(118) 논문의 커스텀 손실 함수 구현
+현재 예측값(current_q)을 기준으로 정규화된 형태의 오차를 계산함으로써 모델이 예측하는 값의 크기에 상관없이 상대적인 오차율을 학습에 반영하고자 함
+
+(139) rewards = np.where(actions == labels, 1.0, -0.01)
+벌점의 크기를 낮게 책정하여 정답을 맞히는 보상에 집중하게 함
+데이터셋 내에 희귀한 공격 클래스(U2R, R2L 등)가 있을 경우, 무작위로 추측하다가 우연히 맞혔을 때 얻는 이득을 극대화하여 소수 클래스 학습을 유도할 때 자주 사용하는 전략
