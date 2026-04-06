@@ -1,0 +1,60 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+bin/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+rl-gpu/  # 사용 중인 가상환경 이름이 rl-gpu인 것으로 보여 추가했습니다.
+
+# PyTorch / Machine Learning Models
+*.pt
+*.pth
+*.pkl
+*.npy
+*.npz
+
+# Data files (용량이 크거나 외부 데이터셋인 경우)
+*.txt
+*.csv
+*.gz
+
+# IDE - VS Code
+.vscode/
+.history/
+*.code-workspace
+
+# IDE - PyCharm
+.idea/
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
